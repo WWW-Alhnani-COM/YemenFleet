@@ -17,18 +17,23 @@ WORKDIR /var/www/html
 # Copy application files to working directory
 COPY . .
 
-# Ensure necessary Laravel directories exist
-RUN mkdir -p bootstrap/cache storage \
-    && chmod -R 775 bootstrap/cache storage
+# Create required Laravel directories if not present
+RUN mkdir -p storage/app \
+    storage/framework/cache \
+    storage/framework/sessions \
+    storage/framework/views \
+    storage/logs \
+    bootstrap/cache
+
+# Set permissions for Laravel storage and cache directories
+RUN chown -R www-data:www-data storage bootstrap/cache \
+    && chmod -R 775 storage bootstrap/cache
 
 # Install PHP dependencies via Composer
 RUN composer install --no-dev --optimize-autoloader
 
-# Set permissions for Laravel storage and cache directories
-RUN chown -R www-data:www-data storage bootstrap/cache
-
-# Expose port (use the port Render will route to, usually 10000 or 8000)
+# Expose port (Render uses 8000 or 10000)
 EXPOSE 8000
 
-# Run database migrations before starting the server and then start Laravel's built-in server
+# Run database migrations and start Laravel server
 CMD php artisan migrate --force && php artisan serve --host=0.0.0.0 --port=8000
