@@ -26,15 +26,17 @@ COPY . .
 RUN mkdir -p \
     bootstrap/cache \
     storage/framework/{cache,sessions,views} \
-    storage/logs && \
-    chown -R www-data:www-data bootstrap/cache storage && \
-    chmod -R 775 bootstrap/cache storage
+    storage/logs
 
 # Install PHP dependencies
 RUN composer install --no-dev --optimize-autoloader
 
 # Install JS dependencies and build Vite assets
 RUN npm install && npm run build
+
+# Fix permissions explicitly after all build steps
+RUN chmod -R 775 storage bootstrap/cache && \
+    chown -R www-data:www-data storage bootstrap/cache
 
 # Expose Laravel's default port (used by Render or similar platforms)
 EXPOSE 8000
