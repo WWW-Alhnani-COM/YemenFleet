@@ -18,8 +18,7 @@ WORKDIR /var/www/html
 COPY . .
 
 # Install PHP dependencies via Composer
-RUN composer install --no-dev --optimize-autoloader
-
+RUN composer install
 # Set permissions for Laravel storage and cache directories
 RUN chown -R www-data:www-data storage bootstrap/cache
 
