@@ -5,7 +5,10 @@ FROM php:8.3-fpm
 RUN apt-get update && apt-get install -y \
     git \
     unzip \
+    curl \
     libpq-dev \
+    nodejs \
+    npm \
     && docker-php-ext-install pdo pdo_pgsql
 
 # Install Composer globally
@@ -17,23 +20,18 @@ WORKDIR /var/www/html
 # Copy application files to working directory
 COPY . .
 
-# Create required Laravel directories if not present
-RUN mkdir -p storage/app \
-    storage/framework/cache \
-    storage/framework/sessions \
-    storage/framework/views \
-    storage/logs \
-    bootstrap/cache
-
-# Set permissions for Laravel storage and cache directories
-RUN chown -R www-data:www-data storage bootstrap/cache \
-    && chmod -R 775 storage bootstrap/cache
-
 # Install PHP dependencies via Composer
-RUN composer install --no-dev --optimize-autoloader
+RUN composer install
 
-# Expose port (Render uses 8000 or 10000)
+# Install JS dependencies and build assets with Vite
+RUN npm install && npm run build
+
+# تأكد من إنشاء مجلدات Laravel الضرورية
+RUN mkdir -p storage/app storage/framework storage/logs bootstrap/cache \
+    && chown -R www-data:www-data storage bootstrap/cache
+
+# Expose port
 EXPOSE 8000
 
-# Run database migrations and start Laravel server
+# Run migrations and serve the app
 CMD php artisan migrate --force && php artisan serve --host=0.0.0.0 --port=8000
