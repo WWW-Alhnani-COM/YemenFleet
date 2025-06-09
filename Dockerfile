@@ -20,7 +20,8 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 WORKDIR /var/www/html
 
 # Copy application files
-COPY . 
+COPY . .
+
 # Create required Laravel directories and set correct permissions
 RUN mkdir -p \
     bootstrap/cache \
@@ -28,12 +29,6 @@ RUN mkdir -p \
     storage/logs && \
     chown -R www-data:www-data bootstrap/cache storage && \
     chmod -R 775 bootstrap/cache storage
-
-# Create required Laravel directories before Composer
-RUN mkdir -p storage/framework/{cache,sessions,views} bootstrap/cache
-
-# Set correct permissions
-RUN chown -R www-data:www-data storage bootstrap/cache
 
 # Install PHP dependencies
 RUN composer install --no-dev --optimize-autoloader
