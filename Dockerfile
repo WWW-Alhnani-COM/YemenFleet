@@ -1,7 +1,7 @@
-# Use official PHP image with FPM
+# استخدام صورة PHP الرسمية مع FPM
 FROM php:8.3-fpm
 
-# Install system dependencies and PHP extensions required by Laravel and PostgreSQL
+# تثبيت الحزم اللازمة لـ Laravel وPostgreSQL وVite
 RUN apt-get update && apt-get install -y \
     git \
     unzip \
@@ -13,33 +13,33 @@ RUN apt-get update && apt-get install -y \
     npm \
     && docker-php-ext-install pdo pdo_pgsql zip
 
-# Install Composer globally
+# نسخ Composer من صورة رسمية
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# Set working directory
+# تعيين مجلد العمل
 WORKDIR /var/www/html
 
-# Copy application files
+# نسخ ملفات المشروع إلى الحاوية
 COPY . .
 
-# Create required Laravel directories and set correct permissions
+# إنشاء مجلدات Laravel المطلوبة وحل مشكلة الكاش
 RUN mkdir -p \
     bootstrap/cache \
-    storage/framework/{cache,sessions,views} \
-    storage/logs
+    storage/framework/cache \
+    storage/framework/sessions \
+    storage/framework/views \
+    storage/logs && \
+    chown -R www-data:www-data storage bootstrap/cache && \
+    chmod -R 775 storage bootstrap/cache
 
-# Install PHP dependencies
+# تثبيت مكتبات PHP بدون بيئة التطوير
 RUN composer install --no-dev --optimize-autoloader
 
-# Install JS dependencies and build Vite assets
+# تثبيت مكتبات JavaScript وبناء ملفات Vite
 RUN npm install && npm run build
 
-# Fix permissions explicitly after all build steps
-RUN chmod -R 775 storage bootstrap/cache && \
-    chown -R www-data:www-data storage bootstrap/cache
-
-# Expose Laravel's default port (used by Render or similar platforms)
+# فتح المنفذ 8000 لتشغيل السيرفر
 EXPOSE 8000
 
-# Run database migrations and start Laravel server
+# تنفيذ الأوامر: هجرة قواعد البيانات وتشغيل الخادم
 CMD php artisan migrate --force && php artisan serve --host=0.0.0.0 --port=8000
