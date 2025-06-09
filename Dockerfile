@@ -1,42 +1,30 @@
-# استخدم صورة PHP الرسمية مع Apache
-FROM php:8.2-apache
+# Use official PHP image with FPM
+FROM php:8.1-fpm
 
-# تثبيت المتطلبات الأساسية و PHP Extensions المطلوبة للـ Laravel
+# Install system dependencies and PHP extensions required by Laravel and PostgreSQL
 RUN apt-get update && apt-get install -y \
     git \
     unzip \
-    curl \
-    libpng-dev \
-    libonig-dev \
-    libxml2-dev \
-    zip \
-    sqlite3 \
-    libsqlite3-dev \
-    && docker-php-ext-install pdo pdo_mysql mbstring exif pcntl bcmath gd pdo_sqlite
+    libpq-dev \
+    && docker-php-ext-install pdo pdo_pgsql
 
-# تثبيت Composer
-COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+# Install Composer globally
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# نسخ ملفات المشروع إلى مجلد Apache
-COPY . /var/www/html
-
-# إعداد مجلد العمل
+# Set working directory
 WORKDIR /var/www/html
 
-# تثبيت الحزم عبر Composer
-RUN composer install --no-interaction --prefer-dist --optimize-autoloader
+# Copy application files to working directory
+COPY . .
 
-# إعداد صلاحيات Laravel
-RUN chown -R www-data:www-data /var/www/html \
-    && chmod -R 755 /var/www/html/storage
+# Install PHP dependencies via Composer
+RUN composer install --no-dev --optimize-autoloader
 
-# إعداد Laravel Key وملف SQLite
-RUN cp .env.example .env \
-    && touch /var/www/html/database/database.sqlite \
-    && php artisan key:generate
+# Set permissions for Laravel storage and cache directories
+RUN chown -R www-data:www-data storage bootstrap/cache
 
-# فتح المنفذ 80
-EXPOSE 80
+# Expose port (use the port Render will route to, usually 10000 or 8000)
+EXPOSE 8000
 
-# أمر بدء تشغيل Laravel عبر Apache
-CMD ["apache2-foreground"]
+# Run database migrations before starting the server and then start Laravel's built-in server
+CMD php artisan migrate --force && php artisan serve --host=0.0.0.0 --port=8000
