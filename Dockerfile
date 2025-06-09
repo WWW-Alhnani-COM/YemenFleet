@@ -17,9 +17,9 @@ WORKDIR /var/www/html
 # Copy application files to working directory
 COPY . .
 
-# Ensure bootstrap/cache exists and is writable before Composer install
-RUN mkdir -p bootstrap/cache \
-    && chmod -R 775 bootstrap/cache
+# Ensure necessary Laravel directories exist
+RUN mkdir -p bootstrap/cache storage \
+    && chmod -R 775 bootstrap/cache storage
 
 # Install PHP dependencies via Composer
 RUN composer install --no-dev --optimize-autoloader
